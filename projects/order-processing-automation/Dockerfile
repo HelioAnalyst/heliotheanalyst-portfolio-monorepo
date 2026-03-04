@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 COPY pyproject.toml ./
+COPY README.md ./
 # Copy application code
 COPY src/ ./src/
 RUN pip install --upgrade pip && \
