@@ -56,6 +56,9 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+@app.get("/")
+def root():
+    return {"service": "order-api", "status": "ok"}
 
 @app.get("/health")
 async def health_check() -> dict:
