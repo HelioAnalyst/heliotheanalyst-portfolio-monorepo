@@ -7,9 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && pip install -e "."
 
 COPY src/ ./src/
+
+RUN pip install --upgrade pip && pip install -e "."
 
 FROM python:3.11-slim as production
 

@@ -28,11 +28,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install Python dependencies
 COPY pyproject.toml ./
+# Copy application code
+COPY src/ ./src/
 RUN pip install --upgrade pip && \
     pip install -e "."
 
-# Copy application code
-COPY src/ ./src/
+
 
 # Production stage
 FROM python:3.11-slim as production
