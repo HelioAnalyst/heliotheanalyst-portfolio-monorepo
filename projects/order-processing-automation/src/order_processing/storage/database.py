@@ -1,8 +1,6 @@
 """Database repository for order processing."""
 
-import json
 from datetime import datetime
-from decimal import Decimal
 from typing import Any, Optional
 
 from sqlalchemy import (
@@ -12,10 +10,9 @@ from sqlalchemy import (
     Integer,
     Numeric,
     String,
-    create_engine,
     select,
 )
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.orm import declarative_base
 
 from order_processing.config import Settings
@@ -40,20 +37,30 @@ class OrderModel(Base):
     idempotency_key = Column(String(100), unique=True, nullable=False, index=True)
     customer_id = Column(String(36), nullable=False)
     customer_email = Column(String(255), nullable=False)
+
     items = Column(JSON, nullable=False)
     shipping_address = Column(JSON, nullable=False)
+
     subtotal = Column(Numeric(10, 2), nullable=False)
     tax = Column(Numeric(10, 2), nullable=False)
     shipping_cost = Column(Numeric(10, 2), nullable=False)
     total = Column(Numeric(10, 2), nullable=False)
+
     currency = Column(String(3), default="USD")
     status = Column(String(50), nullable=False, index=True)
+
     provider = Column(String(50))
     provider_order_id = Column(String(100))
+
     retry_count = Column(Integer, default=0)
     max_retries = Column(Integer, default=3)
     failure_reason = Column(String(500))
-    metadata = Column(JSON, default=dict)
+
+    # NOTE:
+    # "metadata" is a reserved attribute name in SQLAlchemy Declarative models.
+    # We keep the DB column name as "metadata" but use a safe Python attribute name.
+    order_metadata = Column("metadata", JSON, default=dict)
+
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     processed_at = Column(DateTime)
@@ -119,7 +126,7 @@ class DatabaseRepository:
             retry_count=order.retry_count,
             max_retries=order.max_retries,
             failure_reason=order.failure_reason,
-            metadata=order.metadata,
+            order_metadata=order.metadata,  # domain field stays "metadata"
             created_at=order.created_at,
             updated_at=order.updated_at,
             processed_at=order.processed_at,
@@ -152,7 +159,7 @@ class DatabaseRepository:
             retry_count=model.retry_count,
             max_retries=model.max_retries,
             failure_reason=model.failure_reason,
-            metadata=model.metadata,
+            metadata=model.order_metadata,  # map back to domain "metadata"
             created_at=model.created_at,
             updated_at=model.updated_at,
             processed_at=model.processed_at,
@@ -241,6 +248,10 @@ class DatabaseRepository:
             if status == OrderStatus.COMPLETED:
                 model.processed_at = datetime.utcnow()
 
+            # Guard: allow callers to pass metadata=... and map it safely.
+            if "metadata" in kwargs:
+                kwargs["order_metadata"] = kwargs.pop("metadata")
+
             for key, value in kwargs.items():
                 setattr(model, key, value)
 
@@ -284,12 +295,13 @@ class DatabaseRepository:
             return DashboardMetrics()
 
         async with self._session_maker() as session:
-            # Count by status
             from sqlalchemy import func
 
+            # Count by status
             result = await session.execute(
-                select(OrderModel.status, func.count(OrderModel.id))
-                .group_by(OrderModel.status)
+                select(OrderModel.status, func.count(OrderModel.id)).group_by(
+                    OrderModel.status
+                )
             )
             status_counts = {status: count for status, count in result.all()}
 
@@ -302,7 +314,9 @@ class DatabaseRepository:
                 .where(OrderModel.provider.isnot(None))
                 .group_by(OrderModel.provider)
             )
-            provider_dist = {provider or "unknown": count for provider, count in result.all()}
+            provider_dist = {
+                provider or "unknown": count for provider, count in result.all()
+            }
 
             return DashboardMetrics(
                 total_orders=total,
