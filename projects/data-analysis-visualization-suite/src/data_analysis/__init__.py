@@ -1,0 +1,3 @@
+"""Data Analysis & Visualization Suite."""
+
+__version__ = "1.0.0"

@@ -1,0 +1,267 @@
+# HelioTheAnalyst Portfolio Monorepo - Root Configuration
+# Production-grade monorepo tooling configuration
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "heliotheanalyst-portfolio-monorepo"
+version = "1.0.0"
+description = "Production-grade portfolio monorepo for HelioTheAnalyst data engineering projects"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [
+    {name = "HelioTheAnalyst", email = "hello@heliotheanalyst.co.uk"}
+]
+keywords = ["data-engineering", "automation", "portfolio", "python", "fastapi"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.urls]
+Homepage = "https://heliotheanalyst.co.uk"
+Repository = "https://github.com/heliotheanalyst/portfolio-monorepo"
+Documentation = "https://github.com/heliotheanalyst/portfolio-monorepo#readme"
+
+# =============================================================================
+# Monorepo Dependencies (installed at root for tooling)
+# =============================================================================
+[project.optional-dependencies]
+dev = [
+    # Linting and formatting
+    "ruff>=0.1.9",
+    # Type checking
+    "mypy>=1.7.0",
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.3.0",
+    # Pre-commit
+    "pre-commit>=3.6.0",
+]
+
+# =============================================================================
+# Ruff Configuration (Monorepo-wide linting and formatting)
+# =============================================================================
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+indent-width = 4
+respect-gitignore = true
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "*/.venv/*",
+    "*/venv/*",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # Pyflakes
+    "I",      # isort
+    "N",      # pep8-naming
+    "D",      # pydocstyle
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+    "TCH",    # flake8-type-checking
+    "TID",    # flake8-tidy-imports
+    "Q",      # flake8-quotes
+    "FLY",    # flynt
+    "PERF",   # perflint
+    "RUF",    # ruff-specific rules
+    "C90",    # mccabe complexity
+    "A",      # flake8-builtins
+    "COM",    # flake8-commas
+    "PT",     # flake8-pytest-style
+]
+ignore = [
+    "D100",   # Missing docstring in public module
+    "D104",   # Missing docstring in public package
+    "D107",   # Missing docstring in __init__
+    "E501",   # Line too long (handled by formatter)
+    "COM812", # Trailing comma (conflicts with formatter)
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "shopify_integration",
+    "helioscraper",
+    "order_processing",
+    "data_analysis",
+    "api_testing",
+    "inventory_management"
+]
+combine-as-imports = true
+split-on-trailing-comma = false
+
+# =============================================================================
+# MyPy Configuration (Monorepo-wide type checking)
+# =============================================================================
+[tool.mypy]
+python_version = "3.11"
+platform = "linux"
+
+# Error reporting
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+show_error_codes = true
+show_column_numbers = true
+show_error_context = true
+
+# Imports
+ignore_missing_imports = true
+follow_imports = "normal"
+follow_imports_for_stubs = true
+
+# Output
+pretty = true
+color_output = true
+error_summary = true
+
+# Per-module overrides (add as needed)
+[[tool.mypy.overrides]]
+module = [
+    "selenium.*",
+    "sklearn.*",
+    "streamlit.*",
+    "tkinter.*",
+]
+ignore_missing_imports = true
+
+# =============================================================================
+# Pytest Configuration (Monorepo-wide testing)
+# =============================================================================
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--import-mode=importlib",
+]
+testpaths = [
+    "projects/shopify-integration-system/tests",
+    "projects/helioscraper/tests",
+    "projects/order-processing-automation/tests",
+    "projects/data-analysis-visualization-suite/tests",
+    "projects/api-docs-testing-framework/tests",
+    "projects/digital-inventory-management/tests",
+]
+markers = [
+    "unit: Unit tests (fast, isolated)",
+    "integration: Integration tests (may use database/services)",
+    "e2e: End-to-end tests (full system)",
+    "slow: Tests that take >1 second",
+    "mock: Tests using mocks/fixtures",
+]
+
+# Async configuration
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+
+# =============================================================================
+# Coverage Configuration
+# =============================================================================
+[tool.coverage.run]
+source = [
+    "projects/shopify-integration-system/src",
+    "projects/helioscraper/src",
+    "projects/order-processing-automation/src",
+    "projects/data-analysis-visualization-suite/src",
+    "projects/api-docs-testing-framework/src",
+    "projects/digital-inventory-management/src",
+]
+branch = true
+parallel = true
+concurrency = ["thread", "greenlet"]
+omit = [
+    "*/tests/*",
+    "*/test_*.py",
+    "*/__pycache__/*",
+    "*/venv/*",
+    "*/.venv/*",
+    "*/migrations/*",
+    "*/alembic/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false
+fail_under = 80
+precision = 2
+
+[tool.coverage.html]
+directory = "htmlcov"
+title = "HelioTheAnalyst Portfolio Coverage Report"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+# =============================================================================
+# Project-specific overrides can be defined in each project's pyproject.toml
+# =============================================================================

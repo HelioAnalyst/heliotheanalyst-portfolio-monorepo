@@ -1,0 +1,318 @@
+{
+  "projects": [
+    {
+      "slug": "shopify-integration-system",
+      "title": "Shopify Integration System",
+      "hero_summary": "Enterprise-grade e-commerce synchronisation with intelligent rate limiting, retry logic, and automated data reconciliation between Shopify and Business Central 365.",
+      "problem": "E-commerce businesses struggle to keep inventory, products, and orders synchronised between their Shopify storefront and back-office ERP systems. Manual syncing is error-prone, and API rate limits cause frequent failures without proper handling.",
+      "solution": "Built a resilient integration platform using FastAPI that handles Shopify's API rate limits gracefully, implements exponential backoff for retries, and maintains data consistency through automated reconciliation processes. Includes mock adapters for testing without real credentials.",
+      "impact": [
+        "Handles bulk sync operations with configurable batch sizes (default: 100 records)",
+        "Automatically detects and resolves inventory discrepancies between systems",
+        "Provides health checks and Prometheus metrics for monitoring"
+      ],
+      "tech_stack": [
+        "FastAPI",
+        "PostgreSQL",
+        "SQLAlchemy",
+        "Redis",
+        "Pydantic",
+        "pytest",
+        "Docker"
+      ],
+      "key_features": [
+        "Bulk product synchronisation with batch processing",
+        "Inventory reconciliation with discrepancy detection",
+        "Order processing pipeline with status tracking",
+        "Rate limit handling with automatic retry logic",
+        "Mock adapters for offline testing",
+        "Health checks and Prometheus metrics endpoints"
+      ],
+      "architecture": "Layered architecture with clear separation: API routes handle HTTP requests, services contain business logic, adapters abstract external APIs (Shopify/BC365), and storage repositories manage PostgreSQL and Redis. Pydantic models ensure data validation throughout.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "Start services with `docker-compose up -d` (PostgreSQL + Redis)",
+        "Execute `python scripts/run_demo.py` to run mock-mode demo"
+      ],
+      "screenshots": [
+        {
+          "title": "Health Check Endpoint",
+          "filename": "shopify-health-check.png"
+        },
+        {
+          "title": "Bulk Sync Response",
+          "filename": "shopify-bulk-sync.png"
+        },
+        {
+          "title": "Inventory Reconciliation Results",
+          "filename": "shopify-reconciliation.png"
+        }
+      ],
+      "github_path": "projects/shopify-integration-system",
+      "status": "implemented"
+    },
+    {
+      "slug": "helioscraper",
+      "title": "HelioScraper",
+      "hero_summary": "Configurable web scraping framework with intelligent anti-detection, rotating user agents, and comprehensive audit reporting.",
+      "problem": "Data extraction from websites requires handling anti-bot measures, maintaining scrapers as site structures change, and validating extracted data quality. Building scrapers from scratch for each site is repetitive and error-prone.",
+      "solution": "Created a YAML-configurable scraping framework using Selenium that defines site-specific rules without code changes. Implements rotating user agents, randomized delays, and produces clean, Pydantic-validated data with HTML/Markdown audit reports.",
+      "impact": [
+        "Scrapes 5-10 items per page in mock demo (configurable via YAML)",
+        "Generates both CSV and SQLite outputs for downstream processing",
+        "Produces professional HTML reports with extraction statistics"
+      ],
+      "tech_stack": [
+        "Selenium",
+        "Pydantic",
+        "BeautifulSoup",
+        "pandas",
+        "Jinja2",
+        "PyYAML",
+        "pytest"
+      ],
+      "key_features": [
+        "YAML-based site configuration (no code changes needed)",
+        "Rotating user agents and randomized delays for anti-detection",
+        "Pydantic data validation for extracted items",
+        "Multiple output formats (CSV, SQLite)",
+        "HTML and Markdown audit reports",
+        "Mock browser mode for testing without Chrome"
+      ],
+      "architecture": "Configuration-driven design: SiteConfig defines selectors and pagination rules. BrowserManager handles Selenium with anti-detection options. Scraper executes the extraction pipeline. ReportGenerator produces audit trails. All components work in mock mode for development.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "No browser needed—demo uses mock mode",
+        "Execute `python scripts/run_demo.py` to run scraping demo"
+      ],
+      "screenshots": [
+        {
+          "title": "Scraping Report Dashboard",
+          "filename": "helioscraper-report.png"
+        },
+        {
+          "title": "YAML Configuration Example",
+          "filename": "helioscraper-config.png"
+        },
+        {
+          "title": "CSV Output Preview",
+          "filename": "helioscraper-csv.png"
+        }
+      ],
+      "github_path": "projects/helioscraper",
+      "status": "implemented"
+    },
+    {
+      "slug": "order-processing-automation",
+      "title": "Order Processing Automation",
+      "hero_summary": "Asynchronous order pipeline with idempotency guarantees, intelligent provider routing, and failure recovery.",
+      "problem": "E-commerce order processing requires handling high volumes reliably, ensuring exactly-once processing, routing orders to appropriate fulfillment providers, and recovering gracefully from failures without duplicate charges or lost orders.",
+      "solution": "Built an async order pipeline using FastAPI and Celery that guarantees idempotency via unique keys, tracks job status in real-time, routes orders based on configurable business rules, and implements automatic retry with exponential backoff.",
+      "impact": [
+        "Processes 5 sample orders in demo with provider routing based on order value",
+        "Tracks job status from pending through processing to completion",
+        "Implements retry logic with configurable max attempts (default: 3)"
+      ],
+      "tech_stack": [
+        "FastAPI",
+        "PostgreSQL",
+        "SQLAlchemy",
+        "Redis",
+        "Celery",
+        "Pydantic",
+        "pytest",
+        "Docker"
+      ],
+      "key_features": [
+        "Async order processing with Celery workers",
+        "Idempotency keys for exactly-once processing guarantee",
+        "Real-time job status tracking via Redis",
+        "Rule-based provider routing (high/medium/low value orders)",
+        "Automatic retry with exponential backoff",
+        "Webhook integration for provider status updates",
+        "Dashboard metrics endpoint"
+      ],
+      "architecture": "FastAPI handles HTTP requests and queues tasks to Celery workers via Redis broker. PostgreSQL persists orders with idempotency key uniqueness constraints. Provider routing logic selects fulfillment partner based on order value. Failed jobs are retried automatically or sent to retry endpoint.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "Start services with `docker-compose up -d` (PostgreSQL + Redis + Celery)",
+        "Execute `python scripts/run_demo.py` to create and process sample orders"
+      ],
+      "screenshots": [
+        {
+          "title": "Order Creation Response",
+          "filename": "orders-create.png"
+        },
+        {
+          "title": "Dashboard Metrics",
+          "filename": "orders-metrics.png"
+        },
+        {
+          "title": "Provider Routing Logic",
+          "filename": "orders-routing.png"
+        }
+      ],
+      "github_path": "projects/order-processing-automation",
+      "status": "implemented"
+    },
+    {
+      "slug": "data-analysis-visualization-suite",
+      "title": "Data Analysis & Visualization Suite",
+      "hero_summary": "End-to-end analytics toolkit with data cleaning, statistical analysis, anomaly detection, and time series forecasting.",
+      "problem": "Analysts spend significant time on repetitive data preparation tasks—cleaning, handling missing values, detecting outliers, and generating reports. These workflows are often manual and error-prone.",
+      "solution": "Developed a modular analytics toolkit with a Streamlit interface that automates data ingestion, cleaning, statistical analysis, anomaly detection, and forecasting. Generates professional PDF and Excel reports with a single command.",
+      "impact": [
+        "Processes 500-row sample dataset through full pipeline in demo",
+        "Generates 14-day demand forecast with confidence intervals",
+        "Produces PDF, Excel, and Markdown reports automatically"
+      ],
+      "tech_stack": [
+        "Streamlit",
+        "pandas",
+        "NumPy",
+        "scikit-learn",
+        "SciPy",
+        "Matplotlib",
+        "Seaborn",
+        "Plotly",
+        "ReportLab",
+        "OpenPyXL"
+      ],
+      "key_features": [
+        "Data ingestion (CSV, Excel, JSON)",
+        "Automated cleaning (missing values, outliers, duplicates)",
+        "Statistical analysis and correlation matrices",
+        "Anomaly detection (Z-score, IQR, Isolation Forest)",
+        "Time series forecasting with Linear Regression",
+        "PDF and Excel report generation",
+        "Interactive Streamlit dashboard"
+      ],
+      "architecture": "Modular pipeline design: ingest module loads data, clean module handles preprocessing, analyze module computes statistics, anomaly module detects outliers, predict module forecasts trends, viz module creates charts, and report module generates outputs. Streamlit app provides the UI layer.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "Execute `python scripts/run_demo.py` for batch analysis",
+        "Or run `streamlit run src/app.py` for interactive UI"
+      ],
+      "screenshots": [
+        {
+          "title": "Streamlit Upload Interface",
+          "filename": "analytics-upload.png"
+        },
+        {
+          "title": "Forecast Chart",
+          "filename": "analytics-forecast.png"
+        },
+        {
+          "title": "Generated PDF Report",
+          "filename": "analytics-report.png"
+        }
+      ],
+      "github_path": "projects/data-analysis-visualization-suite",
+      "status": "implemented"
+    },
+    {
+      "slug": "api-docs-testing-framework",
+      "title": "API Docs & Testing Framework",
+      "hero_summary": "Production-ready API with auto-generated OpenAPI documentation, comprehensive pytest suite, and GitHub Actions CI/CD pipeline.",
+      "problem": "APIs often lack proper documentation, have insufficient test coverage, and deploy without automated checks. This leads to integration issues, regressions, and maintenance headaches.",
+      "solution": "Built a reference FastAPI implementation demonstrating best practices: auto-generated Swagger/ReDoc docs, comprehensive pytest suite with 80%+ coverage enforcement, request timing middleware, Prometheus metrics, and full GitHub Actions CI/CD pipeline with Docker.",
+      "impact": [
+        "Demonstrates 80%+ test coverage enforcement in CI",
+        "Auto-generates OpenAPI docs from Pydantic models",
+        "Tracks request latency with Prometheus metrics"
+      ],
+      "tech_stack": [
+        "FastAPI",
+        "Pydantic",
+        "pytest",
+        "pytest-cov",
+        "Prometheus",
+        "GitHub Actions",
+        "Docker"
+      ],
+      "key_features": [
+        "Auto-generated OpenAPI/Swagger documentation",
+        "Comprehensive test suite (unit + integration)",
+        "80%+ coverage enforcement with pytest-cov",
+        "Request timing middleware",
+        "Prometheus metrics endpoint",
+        "GitHub Actions CI/CD pipeline",
+        "Docker multi-stage build"
+      ],
+      "architecture": "Standard FastAPI structure: Pydantic models define request/response schemas, route handlers implement CRUD operations, in-memory storage (replaceable with PostgreSQL). Middleware tracks request metrics. pytest suite covers all endpoints with coverage reporting.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "Execute `pytest tests/ -v --cov=src` to run tests",
+        "Or run `python scripts/run_demo.py` to test endpoints"
+      ],
+      "screenshots": [
+        {
+          "title": "Swagger UI Documentation",
+          "filename": "api-swagger.png"
+        },
+        {
+          "title": "Test Coverage Report",
+          "filename": "api-coverage.png"
+        },
+        {
+          "title": "GitHub Actions CI Run",
+          "filename": "api-ci.png"
+        }
+      ],
+      "github_path": "projects/api-docs-testing-framework",
+      "status": "implemented"
+    },
+    {
+      "slug": "digital-inventory-management",
+      "title": "Digital Inventory Management",
+      "hero_summary": "Desktop inventory system with demand forecasting, expiration tracking, and barcode scanning for restaurant operations.",
+      "problem": "Restaurants struggle with inventory management—tracking stock levels, monitoring expiration dates, predicting demand, and optimising reorder points. Spreadsheets are manual and don't provide forecasting capabilities.",
+      "solution": "Built a Tkinter-based desktop application with SQLite storage that tracks inventory items, monitors stock movements, alerts on low stock and expiring items, and uses scikit-learn to forecast demand and calculate optimal reorder points.",
+      "impact": [
+        "Manages 10 sample inventory items with full CRUD operations",
+        "Generates 14-day demand forecast with safety stock calculations",
+        "Simulates barcode scanning for quick item lookup"
+      ],
+      "tech_stack": [
+        "Tkinter",
+        "SQLite",
+        "pandas",
+        "scikit-learn",
+        "Matplotlib",
+        "pytest"
+      ],
+      "key_features": [
+        "Stock management with quantity tracking",
+        "Movement logging (stock in/out transactions)",
+        "Expiration date alerts",
+        "Waste tracking and reporting",
+        "Reorder alerts with configurable thresholds",
+        "Demand forecasting with Linear Regression",
+        "Barcode scan simulation",
+        "CSV export functionality"
+      ],
+      "architecture": "Desktop application architecture: Tkinter provides the GUI, Database class abstracts SQLite operations, InventoryItem models represent stock, DemandForecaster uses scikit-learn for predictions. MVC-like separation with frames for different views.",
+      "demo_instructions": [
+        "Run `pip install -e '.[dev]'` to install dependencies",
+        "Execute `python scripts/run_demo.py` for CLI demo",
+        "Or run `python src/main.py` to launch GUI"
+      ],
+      "screenshots": [
+        {
+          "title": "Main Inventory View",
+          "filename": "inventory-main.png"
+        },
+        {
+          "title": "Dashboard Statistics",
+          "filename": "inventory-dashboard.png"
+        },
+        {
+          "title": "Forecast Results",
+          "filename": "inventory-forecast.png"
+        }
+      ],
+      "github_path": "projects/digital-inventory-management",
+      "status": "implemented"
+    }
+  ]
+}

@@ -1,0 +1,265 @@
+# HelioTheAnalyst Portfolio Monorepo - Shared Services
+# Production-grade service orchestration for all projects
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # PostgreSQL - Shared database for all projects
+  # ==========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: portfolio-postgres
+    environment:
+      POSTGRES_USER: portfolio
+      POSTGRES_PASSWORD: portfolio_dev
+      POSTGRES_DB: portfolio
+      POSTGRES_MULTIPLE_DATABASES: shopify_integration,order_processing,api_testing
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-multiple-databases.sh:/docker-entrypoint-initdb.d/init-multiple-databases.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portfolio -d portfolio"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portfolio-network
+
+  # ==========================================================================
+  # Redis - Shared cache and message broker
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: portfolio-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portfolio-network
+
+  # ==========================================================================
+  # Redis Insight - Redis GUI (optional)
+  # ==========================================================================
+  redis-insight:
+    image: redis/redisinsight:latest
+    container_name: portfolio-redis-insight
+    ports:
+      - "5540:5540"
+    volumes:
+      - redis_insight_data:/data
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio-network
+    profiles:
+      - tools
+
+  # ==========================================================================
+  # Selenium Hub - For helioscraper distributed scraping
+  # ==========================================================================
+  selenium-hub:
+    image: selenium/hub:4.15.0
+    container_name: portfolio-selenium-hub
+    ports:
+      - "4444:4444"
+      - "4442:4442"
+      - "4443:4443"
+    environment:
+      - GRID_MAX_SESSION=16
+      - GRID_BROWSER_TIMEOUT=300
+      - GRID_TIMEOUT=300
+    # Healthcheck removed - curl not available in selenium/hub image
+    # Use simple TCP connection check via depends_on instead
+    networks:
+      - portfolio-network
+    profiles:
+      - selenium
+
+  selenium-chrome:
+    image: selenium/node-chrome:4.15.0
+    container_name: portfolio-selenium-chrome
+    shm_size: 2gb
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_INSTANCES=4
+      - NODE_MAX_SESSION=4
+    depends_on:
+      - selenium-hub
+    networks:
+      - portfolio-network
+    profiles:
+      - selenium
+
+  selenium-firefox:
+    image: selenium/node-firefox:4.15.0
+    container_name: portfolio-selenium-firefox
+    shm_size: 2gb
+    environment:
+      - HUB_HOST=selenium-hub
+      - HUB_PORT=4444
+      - NODE_MAX_INSTANCES=2
+      - NODE_MAX_SESSION=2
+    depends_on:
+      - selenium-hub
+    networks:
+      - portfolio-network
+    profiles:
+      - selenium
+
+  # ==========================================================================
+  # Shopify Integration API Service
+  # ==========================================================================
+  shopify-api:
+    build:
+      context: ./projects/shopify-integration-system
+      dockerfile: Dockerfile
+    container_name: portfolio-shopify-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://portfolio:portfolio_dev@postgres:5432/shopify_integration
+      REDIS_URL: redis://redis:6379/0
+      MOCK_MODE: "true"
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio-network
+    profiles:
+      - shopify
+      - all-apis
+
+  # ==========================================================================
+  # Order Processing API Service
+  # ==========================================================================
+  order-api:
+    build:
+      context: ./projects/order-processing-automation
+      dockerfile: Dockerfile
+    container_name: portfolio-order-api
+    environment:
+      DATABASE_URL: postgresql+asyncpg://portfolio:portfolio_dev@postgres:5432/order_processing
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio-network
+    profiles:
+      - orders
+      - all-apis
+
+  order-worker:
+    build:
+      context: ./projects/order-processing-automation
+      dockerfile: Dockerfile
+    container_name: portfolio-order-worker
+    environment:
+      DATABASE_URL: postgresql+asyncpg://portfolio:portfolio_dev@postgres:5432/order_processing
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/1
+    command: celery -A order_processing.celery_app worker --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - portfolio-network
+    profiles:
+      - orders
+      - all-apis
+
+  order-flower:
+    image: mher/flower:2.0
+    container_name: portfolio-order-flower
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/1
+      FLOWER_PORT: 5555
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    networks:
+      - portfolio-network
+    profiles:
+      - orders
+      - all-apis
+
+  # ==========================================================================
+  # API Testing Framework Service
+  # ==========================================================================
+  api-testing:
+    build:
+      context: ./projects/api-docs-testing-framework
+      dockerfile: Dockerfile
+    container_name: portfolio-api-testing
+    ports:
+      - "8002:8000"
+    networks:
+      - portfolio-network
+    profiles:
+      - api-testing
+      - all-apis
+
+  # ==========================================================================
+  # Grafana - Observability Dashboard (optional)
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: portfolio-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+    networks:
+      - portfolio-network
+    profiles:
+      - observability
+
+# ==========================================================================
+# Volumes
+# ==========================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  redis_insight_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+# ==========================================================================
+# Networks
+# ==========================================================================
+networks:
+  portfolio-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -1,0 +1,22 @@
+name: Demo E-commerce Site
+base_url: https://example-ecommerce.com/products
+selectors:
+  product_list: .product-card
+  title: .product-title
+  price: .product-price
+  image: .product-image@src
+  link: .product-link@href
+  description: .product-description
+pagination:
+  enabled: true
+  selector: .pagination .next
+  max_pages: 5
+delays:
+  min: 1.0
+  max: 3.0
+user_agent_rotation: true
+respect_robots_txt: true
+max_pages: 3
+timeout: 30
+headers: {}
+cookies: {}
