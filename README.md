@@ -126,7 +126,7 @@ All projects follow consistent patterns:
 - **src/ layout**: Clean separation of concerns
 - **Layered architecture**: api/ → services/ → adapters/ → storage/
 - **Type safety**: Full mypy coverage
-- **Test coverage**: pytest with 80%+ threshold
+- **Test coverage**: pytest, with the deepest suites in `shopify-integration-system`, `api-docs-testing-framework` and `helioscraper`; the analytics suite is demo-driven and not yet unit-tested
 - **Mock-first**: All demos run without real credentials
 - **Docker support**: docker-compose.yml where services needed
 
